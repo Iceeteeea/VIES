@@ -1,0 +1,6 @@
+*.pth
+*.pytorch
+*.pkl
+*.tar
+models/color_models/SVCNet/test_data
+cache/
