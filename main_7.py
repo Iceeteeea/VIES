@@ -418,7 +418,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.inp_deno_deg_sr_inter_deold_stab_flags = [0, 0, 0, 0, 0, 0, 0]  # 保证播放器2不会输出上次产生的结果
         to_imgs_save_path = None
         config_file = os.path.join('config', 'file.json')
-        config = json.load(open(config_file, 'r', encoding='utf-8'))
+
+        with open(os.path.join('config', 'file.json'), 'r', encoding='utf-8') as f:
+            config = json.loads(f.read())
         file_root = config['file_root']
         if not os.path.exists(file_root):
             file_root = os.getcwd()
