@@ -22,6 +22,7 @@ from main_win.win_v2.sub2_win_v7 import Ui_Dialog_Mask
 # 视频修复的相关模型
 from utils.model_inference import inp_model_inference, sr_model_inference, deno_model_inference, intp_model_inference, \
     res_model_inference, color_model_inference
+from models.color_models.GCP.get_ref_frame import get_ref_frame
 
 from mask_gen_model.inference_core import InferenceCore
 from mask_gen_model.interact.s2m_controller import S2MController
@@ -35,10 +36,11 @@ from mask_gen_model.util.palette import pal_color_map
 from mask_gen_model.interact.interactive_utils import *
 from mask_gen_model.interact.interaction import *
 from mask_gen_model.interact.timer import Timer
-from utils.utils import choose_outroot, write_config, init_config, read_config
+from utils.utils import choose_outroot, write_config, init_config, read_config, img2video
 torch.set_grad_enabled(False)
 # DAVIS palette
 palette = pal_color_map()
+
 
 # todo 2023.4.11 --> 插帧功能实现后，视频的播放需要注意，因为帧数不相同
 
@@ -106,12 +108,13 @@ class denoising_Thread(QThread):
         file_root = file['file_root']
         output_root = file['completed_frames_root']
         deno_strength = file['deno_strength']
+        max_num_fr_per_seq = file["max_num_fr_per_seq"]
         # 建立保存文件夹
         if not os.path.exists(output_root):
             os.makedirs(output_root)
 
         deno_model_inference(file_path=file_root,  save_path=output_root,
-                          model=self.denoising_model_name_input, noise_sigma=deno_strength)
+                          model=self.denoising_model_name_input, noise_sigma=deno_strength, max_num_fr_per_seq=max_num_fr_per_seq)
 
         # todo 之后增加其他线程，下面 2 行代码，都要加上
         # 修复完成的信号发射，右下角的控制台显示：“已完成”
@@ -163,12 +166,13 @@ class intp_Thread(QThread):
         file_root = file['file_root']
         output_root = file['completed_frames_root']
         rate = file["interpolation_rate"]
+        UHD = file["UHD"]
 
         # 建立保存文件夹
         if not os.path.exists(output_root):
             os.makedirs(output_root)
 
-        intp_model_inference(file_path=file_root,  save_path=output_root,rate=rate)
+        intp_model_inference(file_path=file_root,  save_path=output_root,rate=rate, UHD=UHD)
 
         # todo 之后增加其他线程，下面 2 行代码，都要加上
         # 修复完成的信号发射，右下角的控制台显示：“已完成”
@@ -222,12 +226,16 @@ class colorization_Thread(QThread):
         iter_frames = file['iter_frames']
         crop_size_h = file['crop_size_h']
         crop_size_w = file['crop_size_w']
-        color_mode = file['color_mode']
+        color_image_idx = file['color_image_idx']
+
         # 建立保存文件夹
         if not os.path.exists(output_root):
             os.makedirs(output_root)
 
-        color_model_inference(file_path=file_root, save_path=output_root, lambda_value=lambda_value, sigma_color=sigma_color, iter_frames=iter_frames, crop_size_h=crop_size_h, crop_size_w=crop_size_w)
+        try:
+            color_model_inference(file_path=file_root, save_path=output_root, lambda_value=lambda_value, sigma_color=sigma_color, iter_frames=iter_frames, crop_size_h=crop_size_h, crop_size_w=crop_size_w, idx=color_image_idx)
+        except:
+            myWin.color_error_signal.emit() # 如果在点了颜色参考前开始上色，则触发信号报错。在控制台显示先进行颜色参考的生成
 
         # todo 之后增加其他线程，下面 2 行代码，都要加上
         # 修复完成的信号发射，右下角的控制台显示：“已完成”
@@ -332,6 +340,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     open_file_player_init_signal = pyqtSignal()
     # 修复子窗口的修复状态改变的信号
     function_completed_signal = pyqtSignal()
+    color_completed_signal = pyqtSignal()
+    color_error_signal = pyqtSignal()
 
     def __init__(self, parent=None):
         super(MainWindow, self).__init__(parent)
@@ -899,10 +909,17 @@ class SubWindow_1(QDialog, Ui_Dialog_tool):
         self.denoise_Slider.setMinimum(1)
         self.denoise_Slider.setTickPosition(QSlider.TicksBelow)
         self.denoise_Slider.valueChanged.connect(self.set_deno_strength)
+        self.max_num_fr_per_seq_spinBox.setValue(90)
+        self.max_num_fr_per_seq_spinBox.setSingleStep(5)
+        self.max_num_fr_per_seq_spinBox.setMaximum(500)
+        self.max_num_fr_per_seq_spinBox.valueChanged.connect(self.set_max_num_fr_per_seq)
 
         # 插帧相关
         self.intp_model_name = 'RIFE'
         self.sub1_intp_comboBox.currentIndexChanged.connect(self.set_intp_rate)
+        self.sub1_intp_comboBox.currentIndexChanged.connect(self.display_fps)
+        self.intp_is4k_checkBox.toggled.connect(self.is4k)
+        self.save_video_Button.clicked.connect(self.save_video)
 
         # 去污相关
         self.res_model_name = 'remaster'
@@ -913,33 +930,8 @@ class SubWindow_1(QDialog, Ui_Dialog_tool):
 
         # 上色相关
         self.color_model_name = 'SVCNet'
-        self.lambda_Slider.setMinimum(200)
-        self.lambda_Slider.setMaximum(800)
-        self.lambda_Slider.setValue(500)
 
-        self.sigma_Slider.setValue(4)
-        self.sigma_Slider.setMinimum(1)
-        self.sigma_Slider.setMaximum(10)
-        self.spinBox.setRange(200, 800)
-        self.spinBox.setValue(500)
-        self.lambda_Slider.valueChanged.connect(self.set_lambda_spin)
-        self.spinBox.valueChanged.connect(self.set_lambda_slider)
 
-        self.sigma_spinBox.setRange(1, 10)
-        self.sigma_spinBox.setValue(4)
-        self.sigma_Slider.setMinimum(1)
-        self.sigma_Slider.setMaximum(10)
-        self.sigma_Slider.setValue(4)
-        self.sigma_Slider.valueChanged.connect(self.set_sigma_spin)
-        self.sigma_spinBox.valueChanged.connect(self.set_sigma_slider)
-
-        self.iter_frames_Slider.setMinimum(1)
-        self.iter_frames_Slider.setMaximum(15)
-        self.iter_frames_Slider.setValue(7)
-        self.iter_frames_spinBox.setRange(1, 15)
-        self.iter_frames_spinBox.setValue(7)
-        self.iter_frames_Slider.valueChanged.connect(self.set_iter_frames_spin)
-        self.iter_frames_spinBox.valueChanged.connect(self.set_iter_frames_slider)
 
         self.crop_size_w.setMinimum(256)
         self.crop_size_w.setMaximum(832)
@@ -957,11 +949,16 @@ class SubWindow_1(QDialog, Ui_Dialog_tool):
         self.crop_size_h.valueChanged.connect(self.set_crop_size_h_spin)
         self.crop_size_h_spinBox.valueChanged.connect(self.set_crop_size_h_slider)
 
-        self.color_mode1.setChecked(True)
-        self.color_mode1.toggled.connect(self.set_color_mode)
-        self.color_mode2.toggled.connect(self.set_color_mode)
-        self.color_mode3.toggled.connect(self.set_color_mode)
-        self.color_mode4.toggled.connect(self.set_color_mode)
+        self.color_frame_button.clicked.connect(self.ref_frame)
+        myWin.color_completed_signal.connect(self.open_colored_image)
+
+        self.color_image_right_button.clicked.connect(self.color_image_right)
+        self.color_image_left_button.clicked.connect(self.color_image_left)
+        self.color_image_right_button.clicked.connect(self.open_colored_image)
+        self.color_image_left_button.clicked.connect(self.open_colored_image)
+        myWin.color_error_signal.connect(self.color_error)
+
+
 
         # 线程完成后，会发射这个信号，表示已经完成了，从而窗口1的右下角的控制台会显示“已完成”。
         myWin.function_completed_signal.connect(self.function_completed)
@@ -997,7 +994,7 @@ class SubWindow_1(QDialog, Ui_Dialog_tool):
         # flags
         self.choose_function()
         # (1) 生成保存路径,放在 config/file.json
-        # self.completed_frames_save_root()
+        self.completed_frames_save_root()
         self.sub1_console_push_text('正在进行中...')
         # (2) 看一看什么功能被选中了，执行相应的线程。
 
@@ -1043,6 +1040,10 @@ class SubWindow_1(QDialog, Ui_Dialog_tool):
         elif self.sub1_tools_tabWidget.currentIndex() == 1:
             if not self.res_thread.isRunning():
                 self.res_thread.start()
+
+        elif self.sub1_tools_tabWidget.currentIndex() == 6:
+            if not self.color_thread.isRunning():
+                self.color_thread.start()
 
         # else:
         #     self.sub1_console_push_text("请先选择相应的功能，再开始！")
@@ -1143,15 +1144,35 @@ class SubWindow_1(QDialog, Ui_Dialog_tool):
 
         write_config("deno_strength", self.denoise_Slider.value())
 
+    def set_max_num_fr_per_seq(self):
+        write_config("max_num_fr_per_seq", self.max_num_fr_per_seq_spinBox.value())
+
     # 插帧相关函数
     def set_intp_rate(self):
         if self.sub1_intp_comboBox.currentIndex() == 0:
             self.intp_rate = 2
         if self.sub1_intp_comboBox.currentIndex() == 1:
             self.intp_rate = 4
+        if self.sub1_intp_comboBox.currentIndex() == 2:
+            self.intp_rate = 8
         write_config("interpolation_rate", self.intp_rate)
         intp_model_name_text = '模式：%s倍插帧' % (self.intp_rate)
         self.sub1_console_push_text(intp_model_name_text)
+
+    def is4k(self):
+        if self.intp_is4k_checkBox.isChecked():
+            write_config("UHD", True)
+        else:
+            write_config("UHD", False)
+
+    def display_fps(self):
+        rate = read_config("interpolation_rate")
+        self.fps_label.setText(str(25 * rate))
+
+    def save_video(self):
+        save_path, _ =QFileDialog.getSaveFileName(self, caption="保存视频",  filter="保存.mp4文件(*.mp4)", directory='video.mp4')
+        img2video(save_path)
+
 
     # 去污相关的函数
     def set_mindim(self):
@@ -1199,15 +1220,51 @@ class SubWindow_1(QDialog, Ui_Dialog_tool):
         self.crop_size_w.setValue(self.crop_size_w_spinBox_2.value())
         write_config("crop_size_w", self.crop_size_w_spinBox_2.value())
 
-    def set_color_mode(self):
-        if self.color_mode1.isChecked():
-            write_config("color_mode", 1)
-        elif self.color_mode2.isChecked():
-            write_config("color_mode", 2)
-        elif self.color_mode3.isChecked():
-            write_config("color_mode", 3)
-        elif self.color_mode4.isChecked():
-            write_config("color_mode", 4)
+    def ref_frame(self):
+        get_ref_frame(input=read_config("file_root"))
+        myWin.color_completed_signal.emit()
+
+    def open_colored_image(self): # 显示颜色参考帧
+        path = 'results/inference_random_diverse_color/full_resolution_results'
+        colored_image_list = sorted(glob.glob(os.path.join(path, '*.png')))
+        idx = read_config("color_image_idx")
+        color_image = colored_image_list[idx]
+        image = cv2.imread(color_image)
+        image_height, image_width = image.shape[0], image.shape[1]
+        long_w_h = image_width - image_height
+        if long_w_h >= 0:
+            #  w > h，加宽 h
+            image_show = cv2.copyMakeBorder(image, int(long_w_h / 2), int(long_w_h / 2), 0, 0,
+                                            cv2.BORDER_CONSTANT, value=[0, 0, 0])
+        else:
+            image_show = cv2.copyMakeBorder(image, 0, 0, int(long_w_h / 2), int(long_w_h / 2),
+                                            cv2.BORDER_CONSTANT, value=[0, 0, 0])
+        if True:
+            if len(image_show.shape) == 3:
+                image_show = cv2.cvtColor(image_show, cv2.COLOR_BGR2RGB)
+                video_img = QImage(image_show.data, image_show.shape[1], image_show.shape[0], QImage.Format_RGB888)
+            elif len(image_show.shape) == 1:
+                video_img = QImage(image_show.data, image_show.shape[1], image_show.shape[0], QImage.Format_Indexed8)
+            else:
+                video_img = QImage(image_show.data, image_show.shape[1], image_show.shape[0], QImage.Format_RGB888)
+            self.colored_image_label.setPixmap(QPixmap(video_img))
+            self.colored_image_label.setScaledContents(True)
+
+    def color_image_right(self):
+        idx = read_config("color_image_idx")
+        if idx < 5:
+            idx += 1
+            write_config("color_image_idx", idx)
+
+    def color_image_left(self):
+        idx = read_config("color_image_idx")
+        if idx > 0:
+            idx -= 1
+            write_config("color_image_idx", idx)
+
+    def color_error(self):
+        self.sub1_console_push_text(text='请先生成颜色参考')
+
 
 
     # 以下是通用的函数
@@ -1216,7 +1273,6 @@ class SubWindow_1(QDialog, Ui_Dialog_tool):
         # 以当前时间为文件名
         current_time = time.strftime('%Y-%m-%d_%H:%M:%S', time.localtime())
         # 存入json
-        config_file = os.path.join('config', 'file.json')
         config_file = os.path.join('config', 'file.json')
 
         config = json.load(open(config_file, 'r', encoding='utf-8'))

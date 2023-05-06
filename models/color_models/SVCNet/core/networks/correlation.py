@@ -4,6 +4,8 @@ import re
 
 class Stream:
 	ptr = torch.cuda.current_stream().cuda_stream
+
+
 # end
 
 kernel_Correlation_rearrange = '''

@@ -46,6 +46,7 @@ def read_img_path(imglist, i, opt):
     scribble_paths = []
     # Get the full paths
     tail = '_%dp.png' % (opt.crop_size_h)
+    tail = '.png'
     for j in range(opt.iter_frames):
         img_paths.append(os.path.join(opt.base_root, imglist[i+j]))
         scribble_paths.append(os.path.join(opt.scribble_root, imglist[i+j].replace('.jpg', tail)))
@@ -144,10 +145,10 @@ parser.add_argument('--tag', type = str, default = 'DAVIS', help = 'DAVIS | vide
 parser.add_argument('--save_rgb_path', type = str, \
     default = './test_result', \
         help = 'save the generated rgb image to certain path')
-parser.add_argument('--cpnet_path', type = str, default = './checkpoints/cpnet_epoch1000_batchsize32.pth', help = 'the load name of models')
-parser.add_argument('--ssnet_path', type = str, default = './checkpoints/ssnet_epoch2000_bs8.pth', help = 'the load name of models')
-parser.add_argument('--pwcnet_path', type = str, default = './checkpoints/pwcNet-default.pytorch', help = 'the load name of models')
-parser.add_argument('--vgg_name', type = str, default = './checkpoints/vgg16_pretrained.pth', help = 'the load name of models')
+parser.add_argument('--cpnet_path', type = str, default = 'models/color_models/SVCNet/checkpoints/cpnet_epoch1000_batchsize32.pth', help = 'the load name of models')
+parser.add_argument('--ssnet_path', type = str, default = 'models/color_models/SVCNet/checkpoints/ssnet_epoch2000_bs8.pth', help = 'the load name of models')
+parser.add_argument('--pwcnet_path', type = str, default = 'models/color_models/SVCNet/checkpoints/pwcNet-default.pytorch', help = 'the load name of models')
+parser.add_argument('--vgg_name', type = str, default = 'models/color_models/SVCNet/checkpoints/vgg16_pretrained.pth', help = 'the load name of models')
 # Network parameters
 parser.add_argument('--in_channels', type = int, default = 1, help = 'input RGB image')
 parser.add_argument('--scribble_channels', type = int, default = 2, help = 'input scribble image')

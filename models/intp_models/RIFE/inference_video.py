@@ -14,7 +14,7 @@ from models.intp_models.RIFE.model.RIFE_HDv3 import Model
 
 warnings.filterwarnings("ignore")
 
-def main_worker_RIFE(img_path, exp, output):
+def main_worker_RIFE(img_path, exp, output, UHD=False):
 
     def transferAudio(sourceVideo, targetVideo):
         import shutil
@@ -74,7 +74,7 @@ def main_worker_RIFE(img_path, exp, output):
     assert (not args.video is None or not args.img is None)
     if args.skip:
         print("skip flag is abandoned, please refer to issue #207.")
-    if args.UHD and args.scale==1.0:
+    if UHD and args.scale==1.0:
         args.scale = 0.5
     assert args.scale in [0.25, 0.5, 1.0, 2.0, 4.0]
     if not args.img is None:
