@@ -28,6 +28,7 @@ remaster/下的所有权重文件放入本项目的models/restore_models/remaste
 RIFE/下的所有权重文件放入本项目的models/intp_models/RIFE/checkpoints/目录下
 
 SVCNet/下的所有权重文件放入本项目的models/color_models/SVCNet/checkpoints/目录下
+GCP/下的所有权重文件放入models/color_models/GCP/checkpoints/目录下
 
 # 3 界面的修改
 
