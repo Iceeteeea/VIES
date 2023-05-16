@@ -1,0 +1,16 @@
+<RCC>
+  <qresource prefix="bg">
+    <file>icon3.png</file>
+    <file>icon2.png</file>
+    <file>icon.png</file>
+    <file>Minimize-2.png</file>
+    <file>关闭26.png</file>
+    <file>run.png</file>
+    <file>pause.png</file>
+    <file>stop.png</file>
+    <file>最大化.png</file>
+    <file>background.jpg</file>
+    <file>back.png</file>
+    <file>R-C.png</file>
+  </qresource>
+</RCC>
