@@ -18,8 +18,8 @@
   "crop_size_w": 448,
   "color_mode": 1,
   "UHD": false,
-  "color_image_idx": 2,
-  "completed_frames_root": "cache/completed_frames/2023-05-16_13:12:09",
+  "color_image_idx": 0,
+  "completed_frames_root": "cache/completed_frames/2023-05-16_17:04:36",
   "max_num_fr_per_seq": 115,
-  "follow_root": "cache/completed_frames/2023-05-16_13:12:09"
+  "follow_root": "cache/completed_frames/2023-05-16_17:04:36"
 }

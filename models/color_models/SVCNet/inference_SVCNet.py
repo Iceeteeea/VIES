@@ -23,7 +23,7 @@ def get_filespath(path):
     for root, dirs, files in os.walk(path):
         for filespath in files:
             ret.append(filespath)
-    return ret
+    return sorted(ret)
 
 def recover_ndarray_to_tensor(img):
     img = torch.from_numpy(img.astype(np.float32) / 255.0).permute(2, 0, 1).unsqueeze(0)
