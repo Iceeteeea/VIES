@@ -19,7 +19,7 @@
   "color_mode": 1,
   "UHD": false,
   "color_image_idx": 0,
-  "completed_frames_root": "cache/completed_frames/2023-05-16_17:04:36",
+  "completed_frames_root": "cache/completed_frames/2023-05-17_14:32:40",
   "max_num_fr_per_seq": 115,
-  "follow_root": "cache/completed_frames/2023-05-16_17:04:36"
+  "follow_root": "cache/completed_frames/2023-05-17_14:32:40"
 }

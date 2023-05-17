@@ -64,7 +64,7 @@ def color_model_inference(file_path, save_path,lambda_value, sigma_color, pad='z
 
 
     main_worker_color_scribbles(file_path, scribble_root=one_color_scribble_list[idx],
-                                save_root='results/color_point40_color_width5_256p')
+                                save_root='results/color_point40_color_width5_256p', crop_size_w=crop_size_w, crop_size_h=crop_size_h)
     torch.cuda.empty_cache()
     main_worker_SVCNet(save_rgb_path=save_path, lambda_value=lambda_value, sigma_color=sigma_color, pad=pad, base_root=file_path, scribble_root=scribble_root, iter_frames=iter_frames,crop_size_h=crop_size_h, crop_size_w=crop_size_w, use_scribble=use_scribble)
-    shutil.rmtree('results')
+    # shutil.rmtree('results')

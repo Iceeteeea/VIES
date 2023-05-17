@@ -252,10 +252,10 @@ class colorization_Thread(QThread):
         if not os.path.exists(output_root):
             os.makedirs(output_root)
 
-        try:
-            color_model_inference(file_path=file_root, save_path=output_root, lambda_value=lambda_value, sigma_color=sigma_color, iter_frames=iter_frames, crop_size_h=crop_size_h, crop_size_w=crop_size_w, idx=color_image_idx)
-        except:
-            myWin.color_error_signal.emit() # 如果在点了颜色参考前开始上色，则触发信号报错。在控制台显示先进行颜色参考的生成
+        # try:
+        color_model_inference(file_path=file_root, save_path=output_root, lambda_value=lambda_value, sigma_color=sigma_color, iter_frames=iter_frames, crop_size_h=crop_size_h, crop_size_w=crop_size_w, idx=color_image_idx)
+        # except:
+        #     myWin.color_error_signal.emit() # 如果在点了颜色参考前开始上色，则触发信号报错。在控制台显示先进行颜色参考的生成
 
         # todo 之后增加其他线程，下面 2 行代码，都要加上
         # 修复完成的信号发射，右下角的控制台显示：“已完成”

@@ -73,7 +73,7 @@ def check_path(path):
     if not os.path.exists(path):
         os.makedirs(path)
 
-def get_one_color_scribble(baseroot, saveroot):
+def get_one_color_scribble(baseroot, saveroot, crop_size_h, crop_size_w):
 
     # ----------------------------------------
     #        Initialize the parameters
@@ -108,7 +108,7 @@ def get_one_color_scribble(baseroot, saveroot):
         img = Image.open(imgpath).convert('RGB')
         img = np.array(img)
         h, w = img.shape[0], img.shape[1]
-        img = cv2.resize(img, (opt.crop_size_w, opt.crop_size_h), interpolation = cv2.INTER_CUBIC)
+        img = cv2.resize(img, (crop_size_w, crop_size_h), interpolation = cv2.INTER_CUBIC)
         s = color_scribble(img = img, color_point = opt.color_point, color_width = 1)
         widen_s = widen_scribble(s, opt.color_width)
 

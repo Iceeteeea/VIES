@@ -123,6 +123,7 @@ def save_img(tensor_L, tensor_ab, save_name, opt):
     utils.check_path(save_rgb_sub_folder_name)
     save_rgb_name = os.path.join(save_rgb_sub_folder_name, os.path.basename(save_name))
     cv2.imwrite(save_rgb_name, bgr)
+    print(save_name, save_rgb_name)
     return bgr
 
 def compute_metrics(bgr, gt_bgr):
@@ -330,9 +331,9 @@ def main_worker_SVCNet(save_rgb_path, lambda_value=500, sigma_color=4, pad='zero
             bgr_minus2 = save_img(tensor_L = img_original_l[center_id - 2], tensor_ab = cpnet_frames[center_id - 2], save_name = img_paths[center_id - 2].split('\\')[-1], opt = opt)
             bgr_minus1 = save_img(tensor_L = img_original_l[center_id - 1], tensor_ab = cpnet_frames[center_id - 1], save_name = img_paths[center_id - 1].split('\\')[-1], opt = opt)
         if i == len(imglist) - opt.iter_frames:
-            bgr_add1 = save_img(tensor_L = img_original_l[center_id + 1], tensor_ab = cpnet_frames[center_id + 1], save_name = img_paths[center_id - 3].split('\\')[-1], opt = opt)
-            bgr_add2 = save_img(tensor_L = img_original_l[center_id + 2], tensor_ab = cpnet_frames[center_id + 2], save_name = img_paths[center_id - 2].split('\\')[-1], opt = opt)
-            bgr_add3 = save_img(tensor_L = img_original_l[center_id + 3], tensor_ab = cpnet_frames[center_id + 3], save_name = img_paths[center_id - 1].split('\\')[-1], opt = opt)
+            bgr_add1 = save_img(tensor_L = img_original_l[center_id + 1], tensor_ab = cpnet_frames[center_id + 1], save_name = img_paths[center_id + 1].split('\\')[-1], opt = opt)
+            bgr_add2 = save_img(tensor_L = img_original_l[center_id + 2], tensor_ab = cpnet_frames[center_id + 2], save_name = img_paths[center_id + 2].split('\\')[-1], opt = opt)
+            bgr_add3 = save_img(tensor_L = img_original_l[center_id + 3], tensor_ab = cpnet_frames[center_id + 3], save_name = img_paths[center_id + 3].split('\\')[-1], opt = opt)
         bgr = save_img(tensor_L = img_original_l[center_id], tensor_ab = ssnet_sr_t, save_name = img_paths[center_id].split('\\')[-1], opt = opt)
 
         print('Now it is the %d-th iteration; The center frame name is %s' % (i, img_paths[center_id]))

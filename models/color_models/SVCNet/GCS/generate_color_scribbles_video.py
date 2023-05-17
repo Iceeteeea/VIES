@@ -83,7 +83,7 @@ def check_path(path):
     if not os.path.exists(path):
         os.makedirs(path)
 
-def main_worker_color_scribbles(base_root, scribble_root, save_root):
+def main_worker_color_scribbles(base_root, scribble_root, save_root, crop_size_h, crop_size_w):
 
     # ----------------------------------------
     #        Initialize the parameters
@@ -123,12 +123,12 @@ def main_worker_color_scribbles(base_root, scribble_root, save_root):
         img = Image.open(imgpath).convert('RGB')
         img = np.array(img)
         h, w = img.shape[0], img.shape[1]
-        img = cv2.resize(img, (opt.crop_size_w, opt.crop_size_h), interpolation = cv2.INTER_CUBIC)
+        img = cv2.resize(img, (crop_size_w, crop_size_h), interpolation = cv2.INTER_CUBIC)
         if i == 0:
             if scribble_root: # if there is a given color scribble image
                 s = Image.open(scribble_root).convert('RGB')
                 s = np.array(s)
-                s = cv2.resize(s, (opt.crop_size_w, opt.crop_size_h), interpolation = cv2.INTER_CUBIC)
+                s = cv2.resize(s, (crop_size_w, crop_size_h), interpolation = cv2.INTER_CUBIC)
             else:
                 s = color_scribble(img = img, color_point = opt.color_point, color_width = 1)
             s_previous = s.astype(np.float32) / 255.0
