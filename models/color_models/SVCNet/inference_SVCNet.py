@@ -57,6 +57,7 @@ def read_img(path, opt):
     img = Image.open(path).convert('RGB')
     img = np.array(img) # in RGB format
     img_original = img.copy()
+    # img = cv2.resize(img, (opt.crop_size_w, opt.crop_size_h), interpolation = cv2.INTER_CUBIC)
     img = cv2.resize(img, (opt.crop_size_w, opt.crop_size_h), interpolation = cv2.INTER_CUBIC)
 
     # Input grayscale L and ground truth ab

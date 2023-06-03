@@ -6,6 +6,7 @@ from models.intp_models.RIFE.inference_video import main_worker_RIFE
 from models.restore_models.remaster.remaster import main_worker_remaster
 from models.color_models.SVCNet.inference_SVCNet import main_worker_SVCNet
 from models.color_models.SVCNet.GCS.generate_color_scribbles_video import main_worker_color_scribbles
+from models.deflicker_models.AIOD.deflicker_inference import DeflickerInference
 
 
 import shutil
@@ -68,3 +69,29 @@ def color_model_inference(file_path, save_path,lambda_value, sigma_color, pad='z
     torch.cuda.empty_cache()
     main_worker_SVCNet(save_rgb_path=save_path, lambda_value=lambda_value, sigma_color=sigma_color, pad=pad, base_root=file_path, scribble_root=scribble_root, iter_frames=iter_frames,crop_size_h=crop_size_h, crop_size_w=crop_size_w, use_scribble=use_scribble)
     # shutil.rmtree('results')
+
+def deflicker_model_inference(file_path, save_path):
+    if not os.path.exists(save_path):
+        os.mkdir(save_path)
+    os.environ['MKL_SERVICE_FORCE_INTEL'] = 1
+
+    DI = DeflickerInference(file_path, "VIES")
+    DI.inference()
+    shutil.copytree("results/frames/final/output", save_path)
+    shutil.rmtree('results')
+    shutil.rmtree('data/test')
+
+def deblur_model_inference(file_path, save_path):
+    DI = DeflickerInference(file_path, "VIES")
+    DI.environ()
+    end = glob.glob(os.path.join(file_path, '*'))[0]
+    end = os.path.splitext(end)[-1]
+    end = '{:05d}' + end
+    # print(end)
+    deblur_cmd = "python models/deblur_model/FGST/restoration_video_demo.py models/deblur_model/FGST/configs/FGST_deblur_dvd_test.py models/deblur_model/FGST/checkpoints/FGST_dvd.pth {} {} --filename-tmpl {}".format(file_path, save_path, end)
+    # print(deblur_cmd)
+    os.system(deblur_cmd)
+
+if __name__ == '__main__':
+    deflicker_model_inference("data/inpainting/frames", "test22")
+    # deblur_model_inference(file_path="data/inpainting/frames", save_path="test22")
